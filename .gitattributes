@@ -1,0 +1,7 @@
+# Texto siempre con saltos de línea "LF" (en Windows, Git los cambiaría a CRLF y modificaría las librerías de vendor/).
+* text=auto eol=lf
+
+# Archivos binarios: Git no debe tocarlos.
+*.png binary
+*.epub binary
+*.pdf binary

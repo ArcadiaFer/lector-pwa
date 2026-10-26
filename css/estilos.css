@@ -1,0 +1,306 @@
+/* ===== Base =====
+   Los colores son variables: js/ajustes.js las cambia al elegir un tema
+   (los valores de aquí son solo el respaldo inicial). */
+:root {
+  --fondo: #ffffff;
+  --texto: #1c1c1e;
+  --tenue: #6b6b70;
+  --barra: #f6f6f7;
+  --borde: #dcdce0;
+  --alto-barra: 52px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }   /* que "hidden" gane siempre a otros display */
+
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--fondo);
+  color: var(--texto);
+  font: 16px/1.4 -apple-system, system-ui, "Segoe UI", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* ===== Barra superior (la usan las dos pantallas) ===== */
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: calc(var(--alto-barra) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  background: var(--barra);
+  border-bottom: 1px solid var(--borde);
+}
+.barra h1, .barra h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.barra h2 { font-size: 15px; font-weight: 600; text-align: center; }
+.icono { min-width: 40px; height: 44px; font-size: 20px; font-weight: 600; }
+.barra { gap: 2px; }
+.barra h1, .barra h2 { margin-right: 6px; }
+#btn-volver { font-size: 32px; line-height: 1; }
+.primario { padding: 8px 14px; border-radius: 999px; background: var(--texto); color: var(--fondo); font-weight: 600; }
+
+/* ===== Biblioteca ===== */
+#biblioteca { min-height: 100%; padding-bottom: env(safe-area-inset-bottom); }
+#biblioteca .barra { position: sticky; top: 0; z-index: 2; }
+#estado { margin: 0; padding: 8px 16px; color: var(--tenue); font-size: 14px; }
+#estado:empty { display: none; }
+
+.estante {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 22px 16px;
+  padding: 20px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left));
+}
+.tarjeta { position: relative; min-width: 0; }
+.portada {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+}
+.portada img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sin-imagen {
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  padding: 12px;
+  color: #fff;
+  font: 700 17px/1.2 Georgia, serif;
+  text-align: left;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.formato {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.borrar {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: 18px;
+  line-height: 26px;
+}
+.titulo-libro {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Pantalla ancha (iPad): más columnas y un ancho máximo para que la cuadrícula no se estire demasiado */
+@media (min-width: 700px) {
+  .estante { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); max-width: 1200px; margin: 0 auto; gap: 28px 22px; }
+  .titulo-libro { font-size: 15px; }
+}
+/* Mientras se arrastran archivos sobre la biblioteca */
+#biblioteca.arrastrando { outline: 3px dashed var(--tenue); outline-offset: -8px; }
+
+/* Barra de avance al pie de la portada */
+.progreso { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(0, 0, 0, .5); }
+.progreso > span { display: block; height: 100%; background: #f2c14e; }
+.autor-libro { margin: 2px 0 0; font-size: 12px; color: var(--tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vacio { padding: 64px 32px; text-align: center; color: var(--tenue); }
+
+/* ===== Lector ===== */
+#lector { position: fixed; inset: 0; background: var(--fondo); }
+#lector .barra { position: absolute; top: 0; left: 0; right: 0; z-index: 5; transition: transform .2s ease; }
+#lector.sin-barras .barra { transform: translateY(-100%); }
+
+/* El visor queda siempre en el mismo sitio (debajo de la barra), haya barra o no:
+   así el texto no se reacomoda al mostrar u ocultar la barra. */
+#visor {
+  position: absolute;
+  top: calc(var(--alto-barra) + env(safe-area-inset-top));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: env(safe-area-inset-left);
+  right: env(safe-area-inset-right);
+  overflow: hidden;
+}
+#visor iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--fondo); }
+
+/* Ícono de marcador: vacío por defecto, relleno cuando el lugar actual está marcado */
+.icono[aria-pressed] { outline: none; }
+#btn-marcador[aria-pressed="true"] path { fill: currentColor; }
+
+/* iPad en vertical (o iPad mini): una sola página de EPUB. Una línea de más de ~700 px cansa al leer,
+   así que la página se limita a 680 px y se centra. */
+@media (min-width: 600px) and (max-width: 899px) {
+  #lector[data-formato="epub"] #visor { left: 50%; right: auto; width: 680px; max-width: 100%; transform: translateX(-50%); }
+}
+
+/* ===== PDF ===== */
+.pdf-pagina {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--fondo);
+}
+.pdf-hoja { position: relative; margin: 0 auto; }
+.pdf-hoja canvas { display: block; }
+/* La hoja del PDF es blanca: en sepia se "multiplica" con el fondo para teñirla; en oscuro se invierte. */
+.pdf-pagina[data-tema="sepia"] canvas { mix-blend-mode: multiply; }
+.pdf-pagina[data-tema="oscuro"] canvas { filter: invert(.92) hue-rotate(180deg); }
+
+/* Marcas de resaltado y de búsqueda: rectángulos sobre la hoja (la capa de texto va encima, para poder seleccionar) */
+.pdf-marcas { position: absolute; inset: 0; pointer-events: none; }
+.marca { position: absolute; opacity: .45; mix-blend-mode: multiply; }
+.marca-busqueda { background-color: #ff9f1a; opacity: .55; }
+.pdf-pagina[data-tema="oscuro"] .marca { mix-blend-mode: normal; }
+
+/* Capa de texto invisible que crea pdf.js: cada trozo de texto se coloca exactamente sobre su dibujo en el
+   lienzo; así se puede seleccionar y copiar. (Reglas mínimas tomadas del visor oficial de pdf.js.) */
+.textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; }
+.textLayer span, .textLayer br { position: absolute; color: transparent; white-space: pre; cursor: text; transform-origin: 0 0; }
+.textLayer ::selection { background: rgba(40, 120, 255, .35); }
+/* En PDF el texto es fijo: no hay tamaño ni tipo de letra, solo zoom. En los demás formatos, al revés. */
+#lector .fila-zoom { display: none; } /* con "#lector" para ganarle a la regla .fila, que viene más abajo */
+#lector[data-formato="pdf"] .fila-zoom { display: flex; }
+#lector[data-formato="pdf"] .fila-tamano,
+#lector[data-formato="pdf"] .fila-letra { display: none; }
+
+/* ===== Panel de ajustes ===== */
+/* En el teléfono el panel ocupa todo el ancho; en iPad (pantalla ancha) queda centrado y con un máximo de 560 px. */
+.panel {
+  position: absolute;
+  left: 50%;
+  width: min(100%, 560px);
+  transform: translateX(-50%);
+  bottom: 0;
+  z-index: 6;
+  padding: 12px 20px calc(16px + env(safe-area-inset-bottom));
+  background: var(--barra);
+  border-top: 1px solid var(--borde);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, .2);
+}
+.fila { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.fila > span:first-child { width: 64px; color: var(--tenue); }
+.fila output { min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
+.opcion { min-width: 56px; height: 40px; padding: 0 14px; border: 1px solid var(--borde); border-radius: 10px; }
+.muestra { width: 56px; height: 40px; border: 1px solid var(--borde); border-radius: 10px; font-weight: 700; }
+[aria-pressed="true"] { outline: 2px solid var(--texto); outline-offset: 1px; }
+
+/* ===== Panel de búsqueda (desde arriba) ===== */
+.panel-superior {
+  position: absolute;
+  top: calc(var(--alto-barra) + env(safe-area-inset-top));
+  left: 50%;
+  width: min(100%, 560px);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  max-height: 65%;
+  padding: 10px 16px 8px;
+  background: var(--barra);
+  border: 1px solid var(--borde);
+  border-top: 0;
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+}
+.buscador { display: flex; gap: 8px; }
+.buscador input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  font-size: 16px; /* 16 px o más: con menos, iOS hace zoom al tocar la caja */
+}
+.estado-busqueda { margin: 8px 0 4px; color: var(--tenue); font-size: 13px; }
+.estado-busqueda:empty { display: none; }
+.resultado { display: block; width: 100%; padding: 10px 4px; border-bottom: 1px solid var(--borde); text-align: left; font-size: 15px; line-height: 1.35; }
+.resultado mark { background: #ff9f1a; color: #000; border-radius: 3px; padding: 0 1px; }
+.resultado .lugar { display: block; margin-top: 2px; color: var(--tenue); font-size: 12px; }
+
+/* ===== Barra de colores al seleccionar texto ===== */
+.barra-seleccion {
+  position: absolute;
+  left: 50%;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: var(--barra);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .3);
+}
+.barra-seleccion .color { width: 34px; height: 34px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, .15); }
+.barra-seleccion .cancelar { width: 34px; height: 34px; font-size: 24px; color: var(--tenue); }
+
+/* ===== Copia de seguridad (ventana modal) ===== */
+.dialogo {
+  width: min(92vw, 440px);
+  padding: 20px;
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  background: var(--fondo);
+  color: var(--texto);
+}
+.dialogo::backdrop { background: rgba(0, 0, 0, .5); }
+.dialogo h2 { margin: 0 0 8px; font-size: 18px; }
+.dialogo p { margin: 0 0 12px; color: var(--tenue); font-size: 14px; }
+.opcion-copia { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px; font-size: 14px; }
+.botones { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.secundario { padding: 8px 14px; border: 1px solid var(--borde); border-radius: 999px; font-weight: 600; }
+.estado-copia { min-height: 1.4em; margin: 6px 0 0; }
+
+/* ===== Panel de índice, marcadores y resaltados ===== */
+.panel-alto { display: flex; flex-direction: column; max-height: 70%; }
+.pestanas { display: flex; gap: 8px; padding-bottom: 8px; }
+.pestanas button { flex: 1; height: 38px; border: 1px solid var(--borde); border-radius: 10px; font-weight: 600; }
+.lista { flex: 1; margin: 0; padding: 0; list-style: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.entrada {
+  display: block;
+  width: 100%;
+  padding: 12px 4px 12px calc(4px + var(--nivel, 0) * 18px); /* --nivel lo pone panel-indice.js: sangría por nivel */
+  border-bottom: 1px solid var(--borde);
+  font-size: 15px;
+  text-align: left;
+}
+.entrada:disabled { color: var(--tenue); cursor: default; }
+.fila-marcador { display: flex; align-items: center; border-bottom: 1px solid var(--borde); }
+.fila-marcador .entrada { flex: 1; border-bottom: 0; }
+.marcador-etiqueta { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.chip { display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; }
+.entrada:has(.chip) { display: flex; align-items: baseline; }
+.borrar-marcador { width: 40px; height: 40px; font-size: 22px; color: var(--tenue); }
+.aviso { padding: 16px 4px; color: var(--tenue); font-size: 14px; }

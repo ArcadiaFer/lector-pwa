@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover: la app usa toda la pantalla, incluida la zona de la muesca/isla -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Lector</title>
+
+  <!-- Datos para poder instalarla en la pantalla de inicio como si fuera una app -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Lector">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <link rel="stylesheet" href="css/estilos.css">
+
+  <!-- Librerías de terceros (guardadas en vendor/). Son scripts normales, así que
+       se ejecutan antes que el módulo js/app.js, que sí las necesita. -->
+  <script src="vendor/jszip.min.js"></script>
+  <script src="vendor/epub.min.js"></script>
+  <script src="vendor/pdf.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+
+  <!-- PANTALLA 1: biblioteca -->
+  <main id="biblioteca">
+    <header class="barra">
+      <h1>Mi biblioteca</h1>
+      <button id="btn-agregar" class="primario" type="button">+ Añadir</button>
+      <button id="btn-copia" class="icono" type="button" aria-label="Copia de seguridad">⋯</button>
+    </header>
+    <p id="estado" role="status"></p>
+    <section id="estante" class="estante" aria-label="Libros"></section>
+    <div id="vacio" class="vacio" hidden>
+      <p><strong>Aún no tienes libros.</strong></p>
+      <p>Toca <em>+ Añadir</em> y elige archivos EPUB, PDF, TXT o HTML de tu teléfono o de iCloud.</p>
+    </div>
+  </main>
+
+  <!-- PANTALLA 2: lector -->
+  <section id="lector" hidden>
+    <header class="barra">
+      <button id="btn-volver" class="icono" type="button" aria-label="Volver a la biblioteca">‹</button>
+      <h2 id="titulo-lector"></h2>
+      <button id="btn-buscar" class="icono" type="button" aria-label="Buscar en el libro">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M15.5 15.5L21 21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button id="btn-indice" class="icono" type="button" aria-label="Índice, marcadores y resaltados">☰</button>
+      <button id="btn-marcador" class="icono" type="button" aria-label="Marcar este lugar" aria-pressed="false">
+        <!-- Silueta de marcador; el CSS la rellena cuando el lugar actual está marcado -->
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <path d="M6 3h12v18l-6-4-6 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="btn-ajustes" class="icono" type="button" aria-label="Ajustes de lectura">Aa</button>
+    </header>
+
+    <!-- Aquí dentro se dibuja la página del libro -->
+    <div id="visor"></div>
+
+    <!-- Panel de ajustes (sube desde abajo) -->
+    <div id="panel-ajustes" class="panel" hidden>
+      <div class="fila fila-tamano">
+        <span>Tamaño</span>
+        <button class="opcion" type="button" data-tam="-1" aria-label="Letra más pequeña">A−</button>
+        <output id="valor-tamano">18</output>
+        <button class="opcion" type="button" data-tam="1" aria-label="Letra más grande">A+</button>
+      </div>
+      <div class="fila fila-zoom">
+        <span>Zoom</span>
+        <button class="opcion" type="button" data-zoom="-25" aria-label="Alejar">−</button>
+        <output id="valor-zoom">100 %</output>
+        <button class="opcion" type="button" data-zoom="25" aria-label="Acercar">+</button>
+      </div>
+      <div class="fila">
+        <span>Tema</span>
+        <button class="muestra" type="button" data-tema="claro" aria-label="Tema claro">Aa</button>
+        <button class="muestra" type="button" data-tema="sepia" aria-label="Tema sepia">Aa</button>
+        <button class="muestra" type="button" data-tema="oscuro" aria-label="Tema oscuro">Aa</button>
+      </div>
+      <div class="fila fila-letra">
+        <span>Letra</span>
+        <button class="opcion" type="button" data-fuente="serif">Serif</button>
+        <button class="opcion" type="button" data-fuente="sans">Sans</button>
+      </div>
+    </div>
+
+    <!-- Panel de índice, marcadores y resaltados (lo llena js/panel-indice.js) -->
+    <div id="panel-indice" class="panel panel-alto" hidden>
+      <div class="pestanas">
+        <button type="button" data-pestana="indice" aria-pressed="true">Índice</button>
+        <button type="button" data-pestana="marcadores" aria-pressed="false">Marcadores</button>
+        <button type="button" data-pestana="resaltados" aria-pressed="false">Resaltados</button>
+      </div>
+      <ul class="lista"></ul>
+    </div>
+
+    <!-- Panel de búsqueda: sale desde arriba para que el teclado no lo tape (lo maneja js/panel-busqueda.js) -->
+    <div id="panel-busqueda" class="panel-superior" hidden>
+      <form class="buscador" role="search">
+        <!-- font-size de 16 px o más en el CSS: si no, iOS hace zoom al tocar la caja -->
+        <input type="search" placeholder="Buscar en el libro" enterkeyhint="search"
+               autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Texto a buscar">
+        <button type="submit" class="opcion">Buscar</button>
+      </form>
+      <p class="estado-busqueda" role="status"></p>
+      <ul class="lista"></ul>
+    </div>
+
+    <!-- Barra de colores que aparece al seleccionar texto (la llena js/barra-seleccion.js) -->
+    <div id="barra-seleccion" class="barra-seleccion" hidden></div>
+  </section>
+
+  <!-- Copia de seguridad: ventana modal -->
+  <dialog id="dialogo-copia" class="dialogo">
+    <h2>Copia de seguridad</h2>
+    <p>Guarda tu biblioteca en un archivo, o restáuralo aquí. También sirve para pasar libros, marcadores y
+       resaltados entre tu iPhone y tu iPad.</p>
+    <label class="opcion-copia">
+      <input id="copia-con-libros" type="checkbox" checked>
+      Incluir los libros (el archivo puede pesar bastante)
+    </label>
+    <div class="botones">
+      <button id="btn-crear-copia" class="primario" type="button">Crear copia</button>
+      <button id="btn-entregar-copia" class="primario" type="button" hidden>Guardar o compartir…</button>
+    </div>
+    <div class="botones">
+      <button id="btn-restaurar-copia" class="secundario" type="button">Restaurar copia…</button>
+      <button id="btn-cerrar-copia" class="secundario" type="button">Cerrar</button>
+    </div>
+    <p id="estado-copia" class="estado-copia" role="status"></p>
+  </dialog>
+
+  <!-- Selector de archivos oculto; el botón "+ Añadir" lo abre -->
+  <input id="entrada-archivos" type="file" multiple hidden
+         accept=".epub,.pdf,.txt,.html,.htm,application/epub+zip,application/pdf,text/plain,text/html">
+  <!-- Selector de la copia de seguridad (un .zip) -->
+  <input id="entrada-copia" type="file" hidden accept=".zip,application/zip">
+
+</body>
+</html>

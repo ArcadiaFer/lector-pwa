@@ -1,0 +1,6 @@
+# Libros de muestra: se vuelven a crear con `python tools/generar_recursos.py`
+muestras/
+
+# Python
+__pycache__/
+*.pyc
